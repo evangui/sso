@@ -1,3 +1,6 @@
+## 简单的调用示例，见uc_sso.php
+## 注意：各个子站的用户登陆有效时间，请务必设置成 关闭浏览器就登出的形式。
+
 # 摘要   
   本文主要介绍了利用webservice,session,cookie技术，来进行通用的单点登录系统的分析与设计。具体实现语言为PHP。单点登录，英文名为Single Sign On，简称为 SSO，是目前企业，网络业务的用户综合处理的重要组成部分。而SSO的定义，是在多个应用系统中，用户只需要登陆一次就可以访问所有相互信任的应用系统。
 
@@ -19,25 +22,26 @@
 # 二. 过程说明:        
 ## 登陆流程:
 ### 1. 第一次登陆某个站:
-  a) 用户输入用户名+密码,向用户验证中心发送登录请求
-  b) 当前登录站点，通过webservice请求,用户验证中心验证用户名，密码的合法性。如果验证通过，则生成ticket，用于标识当前会话的用户，并将当前登陆子站的站点标识符记录到用户中心，最后
-  c) 将获取的用户数据和ticket返回给子站。如果验证不通过，则返回相应的错误状态码。
-  d) 根据上一步的webservice请求返回的结果，当前子站对用户进行登陆处理:如状态码表示成功的话，则当前站点通过本站cookie保存 ticket，并本站记录用户的登录状态。状态码表示失败的话，则给用户相应的登录失败提示。
++ 用户输入用户名+密码,向用户验证中心发送登录请求
++ 当前登录站点，通过webservice请求,用户验证中心验证用户名，密码的合法性。如果验证通过，则生成ticket，用于标识当前会话的用户，并将当前登陆子站的站点标识符记录到用户中心，最后
++ 将获取的用户数据和ticket返回给子站。如果验证不通过，则返回相应的错误状态码。
++ 根据上一步的webservice请求返回的结果，当前子站对用户进行登陆处理:如状态码表示成功的话，则当前站点通过本站cookie保存 ticket，并本站记录用户的登录状态。状态码表示失败的话，则给用户相应的登录失败提示。
 
 ### 2. 登陆状态下，用户转到另一子:
-  a) 通过本站cookie或session验证用户的登录状态:如验证通过，进入正常本站处理程序;否则户中心验证用户的登录状态(发送ticket到用户验证中心)，如验证通过，则对返回的用户信息进行本地的登录处理，否则表明用户未登录。
++ 通过本站cookie或session验证用户的登录状态:如验证通过，进入正常本站处理程序;否则户中心验证用户的登录状态(发送ticket到用户验证中心)，如验证通过，则对返回的用户信息进行本地的登录处理，否则表明用户未登录。
 
 ## 登出流程
-  a) 当前登出站清除用户本站的登录状态 和 本地保存的用户全站唯一的随机id
-  b) 通过webservice接口，清除全站记录的全站唯一的随机id。webservice接口会返回，登出其他已登录子站的javascript代码，本站输出此代码。
-  c) js代码访问相应站W3C标准的登出脚本
++ 当前登出站清除用户本站的登录状态 和 本地保存的用户全站唯一的随机id
++ 通过webservice接口，清除全站记录的全站唯一的随机id。webservice接口会返回，登出其他已登录子站的javascript代码，本站输出此代码。
++ js代码访问相应站W3C标准的登出脚本
 
 # 三. 代码说明:        
  
 ## 1. 登陆流程:
-  用户从打开浏览器开始，第一个登陆的子站点，必须调用UClientSSO::loginSSO()方法。该方法返回全站唯一的随机id用于标识该用户。该随机id在UClientSSO::loginSSO()中已通过本站cookie保存，即该子站点保留了用户已登陆标识的存根于本站。
+用户从打开浏览器开始，第一个登陆的子站点，必须调用UClientSSO::loginSSO()方法。该方法返回全站唯一的随机id用于标识该用户。该随机id在UClientSSO::loginSSO()中已通过本站cookie保存，即该子站点保留了用户已登陆标识的存根于本站。
 ### a) UClientSSO::loginSSO()方法如下:
-[php]/**
+```
+/**
 * 用户验证中心 登陆用户处理
 *
 * @param string $username      - 用户名
@@ -91,10 +95,12 @@ static public function loginSSO($username, $password, $remember=false, $alreadyE
         }
 
         return $ret;
-}//end of function                   [/php]
+}//end of function 
+```
 
-         b) 用户验证中心的webservice服务程序，接收到登陆验证请求后，调用UCenter::loginUCenter()方法来处理登陆请求。
-[php]/**
+### 用户验证中心的webservice服务程序，接收到登陆验证请求后，调用UCenter::loginUCenter()方法来处理登陆请求。
+```
+/**
 * 用户验证中心 登陆用户处理
 *
 * @param string $username
@@ -163,13 +169,14 @@ static public function loginUCenter($username, $password, $ip, $siteFlag, $remem
         }
 
         return $ret;
-}         [/php]
+}
+```
 
 ## 2. 本站登陆成功后，进行本地化的用户登陆处理，其后验证用户是否登陆只在本地验证。(本地存取登陆用户状态的信息，请设置为关闭浏览器就退出)
 
 ## 3. 当检测用户登陆状态时，请先调用本地的验证处理，若本地验证不通过，再调用UClientSSO::checkUserLogin()方法到用户中心检测用户的登陆状态。
 ### a) UClientSSO::checkUserLogin()方法如下:
-[php]
+```
 /**
 * 用户单点登陆验证函数
 *
@@ -226,10 +233,12 @@ public static function checkUserLogin(){
         }
 
         return $ret;
-}                   [/php]
+}
+```
 
 ### b) 用户验证中心的webservice服务程序，接收到检验登陆的请求后，调用UCenter::getOnlineUser()方法来处理登陆请求:
-[php]/**
+```
+/**
 * 根据sid，获取当前登陆的用户信息
 *
 * @param string $sessId        - 全站唯一session id，用做ticket
@@ -261,11 +270,13 @@ static public function getOnlineUser($sessId, $siteFlag) {
         }
 
         return ($ret);
-}         [/php]
+} 
+```
 
 ## 4. 单点登出时，调用UClientSSO::logoutSSO()方法。调用成功后，如需其他已登陆站立即登出，请调用 UClientSSO::getSynloginScript()方法获取W3C标准的script，在页面输出。
 ### a) UClientSSO::logoutSSO()方法如下:          
-[php]/**
+```
+/**
 * 全站单点登出
 *  - 通过webservice请求注销掉用户的全站唯一标识
 *
@@ -299,10 +310,12 @@ public static function logoutSSO(){
                 $ret = $aRet['resultFlag'];
         }
         return intval($ret);
-}                   [/php]
+}
+```
 
 ### b) 用户验证中心的webservice服务程序，接收到全站登出请求后，调用UCenter::loginUCenter()方法来处理登陆请求:
-[php]/**
+```
+/**
 * 登出全站处理
 *
 * @param string - 全站唯一session id，用做ticket
@@ -315,7 +328,8 @@ static public function logoutUCenter($sessId) {
 
         $_SESSION = array();
         return empty($_SESSION) ? true : false;
-}[/php]
+}
+```
 
 # 四. 代码部署:          
 ## 1. 用户验证中心设置                 
@@ -342,12 +356,13 @@ static public function logoutUCenter($sessId) {
 ## 1. 本站登陆状态有效时间问题:                  
   全站要求用户登陆状态在关闭浏览器时就失效。要求各分站对session或cookie的处理方式按照如下进行:
 ### a) Session方式记录用户登陆状态的站点
-  请在站点公用脚本开始处，添加一下代码
-[php]session_write_close();
+  请在站点公用脚本开始处，添加以下代码
+```
+session_write_close();
 ini_set('session.auto_start', 0);                    //关闭session自动启动
 ini_set('session.cookie_lifetime', 0);            //设置session在浏览器关闭时失效
-ini_set('session.gc_maxlifetime', 3600);  //session在浏览器未关闭时的持续存活时间     [/php]              
-
+ini_set('session.gc_maxlifetime', 3600);  //session在浏览器未关闭时的持续存活时间        
+```
 ### b) cookie方式记录用户登陆状态的站点
   请在设置用户登陆状态的cookie时，设置cookie有效时间为null.
 
