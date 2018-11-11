@@ -34,6 +34,8 @@
 + 通过webservice接口，清除全站记录的全站唯一的随机id。webservice接口会返回，登出其他已登录子站的javascript代码，本站输出此代码。
 + js代码访问相应站W3C标准的登出脚本
 
+![Image text](https://raw.githubusercontent.com/evangui/sso/master/Mmosite%E7%94%A8%E6%88%B7%E5%8D%95%E7%82%B9%E7%99%BB%E9%99%86.jpg)
+
 # 4. 代码说明:        
  
 ## 4.1 登陆流程:
